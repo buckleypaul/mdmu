@@ -25,7 +25,9 @@ func Format(cf *store.CommentFile, source []byte) string {
 	})
 
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("## Comments on %s\n\n", filepath.Base(cf.File)))
+	filename := filepath.Base(cf.File)
+	sb.WriteString(fmt.Sprintf("Please address my comments on %s:\n\n", filename))
+	sb.WriteString(fmt.Sprintf("## Comments on %s\n\n", filename))
 
 	for i, c := range sorted {
 		if c.SourceStart == c.SourceEnd {

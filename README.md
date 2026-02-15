@@ -57,9 +57,11 @@ mdmu <file.md>
 mdmu comments <file.md>
 ```
 
-Prints all comments in a structured markdown format suitable for piping to Claude Code or other tools:
+Prints all comments in a structured markdown format suitable for copying to Claude Code:
 
 ```markdown
+Please address my comments on plan.md:
+
 ## Comments on plan.md
 
 ### Lines 5-12:
@@ -70,6 +72,43 @@ Prints all comments in a structured markdown format suitable for piping to Claud
 
 ---
 ```
+
+## Claude Code Integration
+
+`mdmu` is designed to work seamlessly with Claude Code for reviewing AI-generated plans and documents.
+
+**Workflow:**
+
+1. **Claude Code generates a file** (e.g., `plan.md`)
+2. **Open mdmu in a separate terminal:**
+   ```bash
+   mdmu plan.md
+   ```
+3. **Add your comments** interactively using the TUI
+4. **Quit mdmu** (press `q`) - comments are auto-saved
+5. **Export comments for Claude Code:**
+   ```bash
+   mdmu comments plan.md
+   ```
+6. **Copy the entire output and paste into your Claude Code session**
+
+The output is formatted with a ready-to-use prompt that tells Claude Code to address your comments:
+
+```markdown
+Please address my comments on plan.md:
+
+## Comments on plan.md
+
+### Lines 5-12:
+> This section covers the main
+> components of the system...
+
+**Comment:** Need more detail on the auth flow here
+
+---
+```
+
+**Alternative:** You can also run `mdmu comments <file>` directly from within Claude Code using bash commands, and Claude will automatically read and process the comments.
 
 ## Features
 

@@ -34,8 +34,11 @@ func TestFormatSingleComment(t *testing.T) {
 
 	result := Format(cf, source)
 
-	if !strings.Contains(result, "Comments on test.md") {
-		t.Error("output should contain file name")
+	if !strings.Contains(result, "Please address my comments on test.md:") {
+		t.Error("output should contain prompt with file name")
+	}
+	if !strings.Contains(result, "## Comments on test.md") {
+		t.Error("output should contain comments header")
 	}
 	if !strings.Contains(result, "Line 3") {
 		t.Error("output should contain line reference")
