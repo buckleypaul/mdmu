@@ -1,0 +1,18 @@
+# Binaries
+mdmu
+
+# Go
+*.test
+*.out
+coverage.txt
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
