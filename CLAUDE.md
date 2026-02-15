@@ -1,178 +1,90 @@
-# Claude Project Instructions for mdmu
+# mdmu — Markdown Markup
 
-## Project Overview
+Terminal UI for annotating markdown files with line-level comments, designed for LLM-consumable feedback.
 
-`mdmu` (Markdown Markup) is a terminal UI tool for annotating markdown files with line-level comments. It's designed to help users provide structured feedback on AI-generated markdown files (like plan files) that can be easily consumed by LLMs.
+## Commands
 
-## Quick Start
-
-**Installation:**
 ```bash
-go install github.com/buckleypaul/mdmu@latest
+go build -o mdmu .          # Build
+go test ./...               # Run all tests (markdown: 6, store: 3, output: 3)
+go test -v -race ./...      # Tests with race detection (matches CI)
+go vet ./...                # Lint
+./mdmu testfile.md          # Smoke test the TUI
+./mdmu comments testfile.md # Export comments as markdown
 ```
 
-**Usage:**
-```bash
-# Interactive TUI
-mdmu <file.md>
+**Go version**: 1.25+ (see `go.mod`)
 
-# Export comments
-mdmu comments <file.md>
-```
+## CI & Release
 
-**Dev workflow:**
-```bash
-go build -o mdmu .
-./mdmu testfile.md
-```
+- **CI** (`.github/workflows/ci.yml`): Runs on push/PR to `main`. Steps: `go vet`, `go test -race`, `go build`.
+- **Release** (`.github/workflows/release.yml`): Triggers on `v*` tags. Uses GoReleaser v2.
+- **GoReleaser** (`.goreleaser.yml`): Builds for linux/darwin/windows (amd64/arm64). Publishes to Homebrew tap `buckleypaul/homebrew-tap`.
+
+**Note**: Module path in `go.mod` is `github.com/paulbuckley/mdmu` but the GitHub repo is `github.com/buckleypaul/mdmu`. Be aware of this mismatch.
 
 ## Architecture
 
 ### Core Components
 
-1. **Markdown Renderer** (`internal/markdown/`)
-   - Custom goldmark-based ANSI renderer
-   - Maintains bidirectional mapping between source lines and rendered output
-   - Supports headings, code blocks, lists, blockquotes, emphasis, links
-   - Word-wrapping aware of ANSI escape codes
+1. **Markdown Renderer** (`internal/markdown/`) — Custom goldmark-based ANSI renderer. Maintains bidirectional mapping between source lines and rendered output. Word-wrapping aware of ANSI escape codes.
 
-2. **TUI** (`internal/tui/`)
-   - Built with Bubble Tea framework
-   - Split-pane layout (65% markdown, 35% comments)
-   - Modes: normal, selecting, commenting
-   - Supports cursor navigation, line selection, comment input
-   - Auto-resizes and re-renders on terminal resize
+2. **TUI** (`internal/tui/`) — Bubble Tea framework. Split-pane layout (65% markdown, 35% comments). Modes: normal, selecting, commenting. Auto-resizes and re-renders on terminal resize.
 
-3. **Storage** (`internal/store/`)
-   - JSON persistence in `/tmp/mdmu/<sha256-of-filepath>.json`
-   - File hash tracking for change detection
-   - Comments store: source line range, selected text, comment, timestamp
+3. **Storage** (`internal/store/`) — JSON persistence in `/tmp/mdmu/<sha256-of-filepath>.json`. File hash tracking for change detection.
 
-4. **Output** (`internal/output/`)
-   - Formats comments as structured markdown
-   - Designed for LLM consumption
-   - Includes quoted source text with each comment
+4. **Output** (`internal/output/`) — Formats comments as structured markdown for LLM consumption.
 
 ### Key Design Decisions
 
-- **Line Mapping**: The renderer tracks which rendered lines correspond to which source lines. This is critical because rendered output differs from source (word-wrapping, styling, blank lines).
-- **Selection Model**: Line-level selection (not character-level) for simplicity.
-- **Storage Location**: `/tmp/mdmu/` for ephemeral comment sessions. Comments are tied to file path via SHA256 hash.
-- **Re-rendering**: On terminal resize, the markdown is re-parsed at the new width to maintain proper word-wrapping.
+- **Line Mapping**: Renderer tracks which rendered lines correspond to which source lines (critical because word-wrapping changes line counts).
+- **Selection Model**: Line-level selection (not character-level).
+- **Storage**: `/tmp/mdmu/` for ephemeral sessions. Cleared on reboot.
+- **Re-rendering**: On terminal resize, markdown is re-parsed at new width.
 
-## Development Guidelines
+## Code Style
 
-### Code Style
-
-- Follow standard Go conventions
-- Use `lipgloss` for all TUI styling (defined in `internal/tui/styles.go`)
+- Standard Go conventions
+- `lipgloss` for all TUI styling (defined in `internal/tui/styles.go`)
 - Keep renderer logic separate from TUI logic
-- Test all core logic (parser, store, formatter)
 
-### Testing
-
-Run tests with:
-```bash
-go test ./internal/...
-```
-
-Current coverage:
-- `internal/markdown`: 6 tests (parser, renderer, line mapping)
-- `internal/store`: 3 tests (load/save, hashing)
-- `internal/output`: 3 tests (formatting, sorting)
-
-### Building
-
-```bash
-go build -o mdmu .
-```
-
-### Linting
-
-```bash
-go vet ./...
-```
-
-### Adding Features
+## Adding Features
 
 **New markdown elements:**
-1. Add rendering logic to `internal/markdown/renderer.go` in `renderNode()`
-2. Ensure source line mapping is tracked via `addLine()`
-3. Add test case in `renderer_test.go`
+1. Add rendering logic in `internal/markdown/renderer.go` → `renderNode()`
+2. Track source line mapping via `addLine()`
+3. Add test in `renderer_test.go`
 
 **New keybindings:**
-1. Add to appropriate handler in `internal/tui/model.go` (`handleMarkdownKeys` or `handleCommentKeys`)
-2. Update status bar hints in `internal/tui/statusbar.go`
+1. Add handler in `internal/tui/model.go` (`handleMarkdownKeys` or `handleCommentKeys`)
+2. Update status bar in `internal/tui/statusbar.go`
 3. Update README.md keybindings section
 
 **New TUI modes:**
-1. Add mode constant to `internal/tui/model.go`
-2. Add mode-specific logic to `Update()` and `View()`
+1. Add mode constant in `internal/tui/model.go`
+2. Add mode logic to `Update()` and `View()`
 3. Add status bar context in `statusbar.go`
 
-## Common Tasks
+## Gotchas
 
-### Debugging Line Mappings
+### Line Mapping Bugs
 
-If comments are appearing on wrong lines:
+If comments appear on wrong lines:
 1. Check `renderer.go` — ensure `addLine()` is called with correct source line numbers
-2. Verify `byteOffsetToLine()` is computing line numbers correctly
-3. Test with `internal/markdown/renderer_test.go::TestParseAndRender_SourceLineMappings`
+2. Verify `byteOffsetToLine()` computes line numbers correctly
+3. Test with `TestParseAndRender_SourceLineMappings`
 
 ### Debugging TUI State
 
-Add temporary debug output in `model.go::View()`:
+Temporary debug output in `model.go::View()`:
 ```go
 debug := fmt.Sprintf("cursor=%d scroll=%d sel=%d mode=%d", m.cursor, m.scrollOffset, m.selectionStart, m.mode)
 return panels + "\n" + debug + "\n" + statusBar
 ```
 
-### Storage Issues
+### Storage
 
-Comments are stored at `StorePath(filePath)` which is `/tmp/mdmu/<hash>.json`. To inspect:
-```bash
-ls -la /tmp/mdmu/
-cat /tmp/mdmu/<hash>.json
-```
-
-## Known Limitations
-
-1. **No undo**: Deleted comments are permanently removed
-2. **No comment editing**: Comments can only be deleted and re-added
-3. **Single-file focus**: No cross-file comment management
-4. **Ephemeral storage**: `/tmp/` is cleared on reboot
-5. **No authentication**: Comments have no author tracking
-
-## Future Enhancements
-
-See [GitHub issues](https://github.com/buckleypaul/mdmu/issues) for planned improvements.
-
-## Testing Checklist
-
-Before releasing changes:
-
-- [ ] `go build` succeeds
-- [ ] `go vet ./...` passes
-- [ ] `go test ./...` passes
-- [ ] Manual smoke test: `./mdmu testfile.md`
-  - [ ] Navigation works (arrows, PgUp/PgDn)
-  - [ ] Selection works (Shift+Up/Down)
-  - [ ] Comment input works (C, type, Ctrl+S)
-  - [ ] Comment deletion works (Tab to comments, d)
-  - [ ] Quit works (q)
-- [ ] `./mdmu comments testfile.md` outputs clean markdown
-- [ ] Terminal resize doesn't crash
-
-## Dependencies
-
-- `bubbletea` - TUI framework
-- `bubbles` - TUI components (textarea)
-- `lipgloss` - Terminal styling
-- `goldmark` - Markdown parsing
-- `cobra` - CLI framework
-- `uuid` - Comment ID generation
-
-All dependencies are vendored in `go.mod`/`go.sum`.
+Inspect comments: `cat /tmp/mdmu/<hash>.json`
 
 ## Project Structure
 
@@ -202,16 +114,9 @@ mdmu/
 │   └── output/
 │       ├── formatter.go         # Markdown export
 │       └── formatter_test.go
-├── testfile.md                  # Sample file for testing
-└── README.md
+├── .goreleaser.yml              # Release config
+├── .github/workflows/
+│   ├── ci.yml                   # CI pipeline
+│   └── release.yml              # Tag-triggered release
+└── testfile.md                  # Sample file for testing
 ```
-
-## Support & Issues
-
-Report bugs at: https://github.com/buckleypaul/mdmu/issues
-
-When reporting:
-1. Include Go version (`go version`)
-2. Include OS and terminal type
-3. Provide minimal reproduction steps
-4. Attach sample markdown file if relevant
