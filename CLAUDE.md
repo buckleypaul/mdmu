@@ -4,6 +4,28 @@
 
 `mdmu` (Markdown Markup) is a terminal UI tool for annotating markdown files with line-level comments. It's designed to help users provide structured feedback on AI-generated markdown files (like plan files) that can be easily consumed by LLMs.
 
+## Quick Start
+
+**Installation:**
+```bash
+go install github.com/buckleypaul/mdmu@latest
+```
+
+**Usage:**
+```bash
+# Interactive TUI
+mdmu <file.md>
+
+# Export comments
+mdmu comments <file.md>
+```
+
+**Dev workflow:**
+```bash
+go build -o mdmu .
+./mdmu testfile.md
+```
+
 ## Architecture
 
 ### Core Components
@@ -65,6 +87,12 @@ Current coverage:
 go build -o mdmu .
 ```
 
+### Linting
+
+```bash
+go vet ./...
+```
+
 ### Adding Features
 
 **New markdown elements:**
@@ -117,15 +145,7 @@ cat /tmp/mdmu/<hash>.json
 
 ## Future Enhancements
 
-Potential improvements (not prioritized):
-- Persistent storage option (e.g., `~/.mdmu/`)
-- Comment editing
-- Undo/redo support
-- Multi-file comment sessions
-- Export to other formats (JSON, HTML)
-- Syntax highlighting in code blocks (via chroma)
-- Search/filter comments
-- Comment threading/replies
+See [GitHub issues](https://github.com/buckleypaul/mdmu/issues) for planned improvements.
 
 ## Testing Checklist
 

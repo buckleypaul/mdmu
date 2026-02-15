@@ -13,11 +13,19 @@ When working with AI-generated markdown files (like plan files from Claude Code)
 
 ## Installation
 
+### Homebrew (macOS/Linux)
+
+```bash
+brew install buckleypaul/tap/mdmu
+```
+
+### Go Install
+
 ```bash
 go install github.com/buckleypaul/mdmu@latest
 ```
 
-Or build from source:
+### Build from Source
 
 ```bash
 git clone https://github.com/buckleypaul/mdmu.git
