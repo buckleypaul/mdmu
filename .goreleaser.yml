@@ -51,7 +51,7 @@ brews:
   - repository:
       owner: buckleypaul
       name: homebrew-tap
-    folder: Formula
+    directory: Formula
     homepage: https://github.com/buckleypaul/mdmu
     description: Terminal UI tool for annotating markdown files with line-level comments
     license: MIT
