@@ -12,10 +12,9 @@ import (
 
 func newCommentTextarea() textarea.Model {
 	ta := textarea.New()
-	ta.Placeholder = "Enter your comment..."
+	ta.Placeholder = ""
 	ta.ShowLineNumbers = false
 	ta.SetHeight(3)
-	ta.Focus()
 	return ta
 }
 

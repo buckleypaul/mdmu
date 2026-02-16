@@ -129,6 +129,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.handleKeypress(msg)
 	}
 
+	// Route non-key messages to textarea when in comment mode (cursor blink, etc.)
+	if m.mode == modeCommenting {
+		var cmd tea.Cmd
+		m.textarea, cmd = m.textarea.Update(msg)
+		return m, cmd
+	}
+
 	return m, nil
 }
 
