@@ -6,11 +6,10 @@ Terminal UI for annotating markdown files with line-level comments, designed for
 
 ```bash
 go build -o mdmu .          # Build
-go test ./...               # Run all tests (markdown: 6, store: 3, output: 3)
+go test ./...               # Run all tests (markdown: 6, output: 3, tui: 5, clipboard: 1)
 go test -v -race ./...      # Tests with race detection (matches CI)
 go vet ./...                # Lint
 ./mdmu testfile.md          # Smoke test the TUI
-./mdmu comments testfile.md # Export comments as markdown
 ```
 
 **Go version**: 1.25+ (see `go.mod`)
@@ -29,17 +28,20 @@ go vet ./...                # Lint
 
 1. **Markdown Renderer** (`internal/markdown/`) — Custom goldmark-based ANSI renderer. Maintains bidirectional mapping between source lines and rendered output. Word-wrapping aware of ANSI escape codes.
 
-2. **TUI** (`internal/tui/`) — Bubble Tea framework. Split-pane layout (65% markdown, 35% comments). Modes: normal, selecting, commenting. Auto-resizes and re-renders on terminal resize.
+2. **TUI** (`internal/tui/`) — Bubble Tea framework. Split-pane layout (65% markdown, 35% comments). Modes: normal, selecting, commenting, preview. Auto-resizes and re-renders on terminal resize. Preview mode shows formatted output and supports clipboard copy.
 
-3. **Storage** (`internal/store/`) — JSON persistence in `/tmp/mdmu/<sha256-of-filepath>.json`. File hash tracking for change detection.
+3. **Store** (`internal/store/`) — In-memory comment types (`Comment`, `CommentFile`). No disk persistence — comments live only for the session.
 
 4. **Output** (`internal/output/`) — Formats comments as structured markdown for LLM consumption.
+
+5. **Clipboard** (`internal/clipboard/`) — Cross-platform clipboard copy (macOS: `pbcopy`, Linux: `xclip`/`xsel`, Windows: `clip.exe`).
 
 ### Key Design Decisions
 
 - **Line Mapping**: Renderer tracks which rendered lines correspond to which source lines (critical because word-wrapping changes line counts).
 - **Selection Model**: Line-level selection (not character-level).
-- **Storage**: `/tmp/mdmu/` for ephemeral sessions. Cleared on reboot.
+- **Ephemeral Comments**: Comments exist only in memory during a session. No disk persistence.
+- **Preview & Copy**: Press `Enter` to preview formatted output, `y` to copy to clipboard.
 - **Re-rendering**: On terminal resize, markdown is re-parsed at new width.
 
 ## Code Style
@@ -82,18 +84,13 @@ debug := fmt.Sprintf("cursor=%d scroll=%d sel=%d mode=%d", m.cursor, m.scrollOff
 return panels + "\n" + debug + "\n" + statusBar
 ```
 
-### Storage
-
-Inspect comments: `cat /tmp/mdmu/<hash>.json`
-
 ## Project Structure
 
 ```
 mdmu/
 ├── main.go                      # Entry point
 ├── cmd/
-│   ├── root.go                  # TUI command
-│   └── comments.go              # Export command
+│   └── root.go                  # TUI command
 ├── internal/
 │   ├── markdown/
 │   │   ├── types.go             # RenderedDocument, LineMapping
@@ -105,12 +102,15 @@ mdmu/
 │   │   ├── markdown_pane.go     # Left pane rendering
 │   │   ├── comments_pane.go     # Right pane rendering
 │   │   ├── comment_input.go     # Modal input
+│   │   ├── preview.go           # Preview mode + clipboard copy
 │   │   ├── statusbar.go         # Keybinding hints
-│   │   └── styles.go            # lipgloss styles
+│   │   ├── styles.go            # lipgloss styles
+│   │   └── model_test.go
 │   ├── store/
-│   │   ├── types.go             # Comment, CommentFile
-│   │   ├── store.go             # Load/Save/Hash
-│   │   └── store_test.go
+│   │   └── types.go             # Comment, CommentFile
+│   ├── clipboard/
+│   │   ├── clipboard.go         # Cross-platform clipboard
+│   │   └── clipboard_test.go
 │   └── output/
 │       ├── formatter.go         # Markdown export
 │       └── formatter_test.go

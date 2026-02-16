@@ -9,10 +9,9 @@ import (
 
 func TestFormatEmpty(t *testing.T) {
 	cf := &store.CommentFile{
-		File:     "/tmp/test.md",
 		Comments: []store.Comment{},
 	}
-	result := Format(cf, []byte("# Test\n"))
+	result := Format(cf, []byte("# Test\n"), "test.md")
 	if result != "" {
 		t.Errorf("expected empty string for no comments, got %q", result)
 	}
@@ -21,7 +20,6 @@ func TestFormatEmpty(t *testing.T) {
 func TestFormatSingleComment(t *testing.T) {
 	source := []byte("# Title\n\nSome text here.\n")
 	cf := &store.CommentFile{
-		File: "/tmp/test.md",
 		Comments: []store.Comment{
 			{
 				ID:          "1",
@@ -32,7 +30,7 @@ func TestFormatSingleComment(t *testing.T) {
 		},
 	}
 
-	result := Format(cf, source)
+	result := Format(cf, source, "test.md")
 
 	if !strings.Contains(result, "Please address my comments on test.md:") {
 		t.Error("output should contain prompt with file name")
@@ -54,14 +52,13 @@ func TestFormatSingleComment(t *testing.T) {
 func TestFormatMultipleComments_Sorted(t *testing.T) {
 	source := []byte("line1\nline2\nline3\nline4\nline5\n")
 	cf := &store.CommentFile{
-		File: "/tmp/test.md",
 		Comments: []store.Comment{
 			{ID: "2", SourceStart: 4, SourceEnd: 5, Comment: "second"},
 			{ID: "1", SourceStart: 1, SourceEnd: 2, Comment: "first"},
 		},
 	}
 
-	result := Format(cf, source)
+	result := Format(cf, source, "test.md")
 
 	// "first" should appear before "second" in output
 	firstIdx := strings.Index(result, "first")

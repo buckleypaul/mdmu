@@ -35,6 +35,7 @@ const (
 	modeNormal     mode = iota
 	modeSelecting
 	modeCommenting
+	modePreview
 )
 
 type pane int
@@ -48,6 +49,7 @@ type Model struct {
 	doc         *markdown.RenderedDocument
 	commentFile *store.CommentFile
 	source      []byte
+	filename    string
 
 	// Window dimensions
 	width  int
@@ -71,29 +73,24 @@ type Model struct {
 	// Comment input
 	textarea textarea.Model
 
+	// Preview state
+	previewContent string
+	previewScroll  int
+	copiedMessage  bool
+
 	// Status
 	statusMessage string
-	fileChanged   bool
 }
 
-func NewModel(doc *markdown.RenderedDocument, cf *store.CommentFile, source []byte) Model {
-	// Check if file has changed since comments were stored
-	fileChanged := false
-	if len(cf.Comments) > 0 {
-		currentHash, err := store.ComputeFileHash(cf.File)
-		if err == nil && currentHash != cf.FileHash {
-			fileChanged = true
-		}
-	}
-
+func NewModel(doc *markdown.RenderedDocument, cf *store.CommentFile, source []byte, filename string) Model {
 	return Model{
 		doc:            doc,
 		commentFile:    cf,
 		source:         source,
+		filename:       filename,
 		selectionStart: -1,
 		focusPane:      paneMarkdown,
 		textarea:       newCommentTextarea(),
-		fileChanged:    fileChanged,
 	}
 }
 
@@ -124,6 +121,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m.handleCommentInput(msg)
 		}
 
+		// Route to preview handler if in preview mode
+		if m.mode == modePreview {
+			return m.handlePreviewKeys(msg)
+		}
+
 		return m.handleKeypress(msg)
 	}
 
@@ -137,6 +139,10 @@ func (m Model) handleKeypress(msg tea.KeyMsg) (Model, tea.Cmd) {
 	// Quit
 	case key == "q":
 		return m, tea.Quit
+
+	// Enter preview mode
+	case key == "enter" && len(m.commentFile.Comments) > 0:
+		return m.enterPreviewMode(), nil
 
 	// Tab: switch focus
 	case key == "tab":
@@ -284,9 +290,6 @@ func (m Model) handleCommentKeys(key string) (Model, tea.Cmd) {
 					break
 				}
 			}
-			if err := store.Save(m.commentFile); err != nil {
-				m.statusMessage = "Error saving: " + err.Error()
-			}
 			if m.commentCursor >= len(m.commentFile.Comments) && m.commentCursor > 0 {
 				m.commentCursor--
 			}
@@ -356,6 +359,11 @@ func (m Model) View() string {
 		return "Loading..."
 	}
 
+	// Preview mode: full-screen formatted output
+	if m.mode == modePreview {
+		return m.renderPreview()
+	}
+
 	// Render panes side by side
 	left := m.renderMarkdownPane()
 	right := m.renderCommentsPane()
@@ -364,19 +372,12 @@ func (m Model) View() string {
 	// Status bar
 	statusBar := m.renderStatusBar()
 
-	// Warning about file changes
-	warning := ""
-	if m.fileChanged {
-		warning = warningStyle.Render("  File has changed since comments were added") + "\n"
-	}
-
 	// Comment input modal overlay
 	if m.mode == modeCommenting {
 		modal := m.renderCommentInput()
 		// Place modal at the bottom, above the status bar
-		return panels + "\n" + warning + modal + "\n" + statusBar
+		return panels + "\n" + modal + "\n" + statusBar
 	}
 
-	return panels + "\n" + warning + statusBar
+	return panels + "\n" + statusBar
 }
-

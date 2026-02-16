@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/paulbuckley/mdmu/internal/markdown"
@@ -31,12 +32,12 @@ func runTUI(cmd *cobra.Command, args []string) error {
 	filePath := args[0]
 
 	// Resolve to absolute path
-	if !isAbsPath(filePath) {
+	if !filepath.IsAbs(filePath) {
 		wd, err := os.Getwd()
 		if err != nil {
 			return fmt.Errorf("getting working directory: %w", err)
 		}
-		filePath = wd + "/" + filePath
+		filePath = filepath.Join(wd, filePath)
 	}
 
 	// Read the source file
@@ -51,14 +52,11 @@ func runTUI(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("parsing markdown: %w", err)
 	}
 
-	// Load existing comments
-	cf, err := store.Load(filePath)
-	if err != nil {
-		return fmt.Errorf("loading comments: %w", err)
-	}
+	// Create empty in-memory comment store
+	cf := &store.CommentFile{}
 
 	// Initialize the TUI model
-	model := tui.NewModel(doc, cf, source)
+	model := tui.NewModel(doc, cf, source, filepath.Base(filePath))
 
 	// Run Bubble Tea
 	p := tea.NewProgram(model, tea.WithAltScreen(), tea.WithMouseCellMotion())
@@ -67,8 +65,4 @@ func runTUI(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
-}
-
-func isAbsPath(p string) bool {
-	return len(p) > 0 && p[0] == '/'
 }

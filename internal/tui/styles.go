@@ -65,8 +65,9 @@ var (
 			Foreground(lipgloss.Color("243")).
 			Italic(true)
 
-	// Warning style
-	warningStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("214")).
-			Bold(true)
+	// Preview title
+	previewTitleStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("62")).
+				Bold(true).
+				Padding(0, 1)
 )

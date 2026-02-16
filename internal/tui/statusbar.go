@@ -11,8 +11,9 @@ func (m Model) renderStatusBar() string {
 	var hints string
 	switch {
 	case m.mode == modeCommenting:
-		hints = fmt.Sprintf(" %s save  %s cancel",
-			statusKeyStyle.Render("Ctrl+S"),
+		hints = fmt.Sprintf(" %s save  %s newline  %s cancel",
+			statusKeyStyle.Render("Enter"),
+			statusKeyStyle.Render("Alt+Enter"),
 			statusKeyStyle.Render("Esc"))
 
 	case m.mode == modeSelecting:
@@ -29,12 +30,22 @@ func (m Model) renderStatusBar() string {
 			statusKeyStyle.Render("q"))
 
 	default:
-		hints = fmt.Sprintf(" %s navigate  %s select  %s comment  %s comments  %s quit",
-			statusKeyStyle.Render("↑↓"),
-			statusKeyStyle.Render("Shift+↑↓"),
-			statusKeyStyle.Render("C"),
-			statusKeyStyle.Render("Tab"),
-			statusKeyStyle.Render("q"))
+		if len(m.commentFile.Comments) > 0 {
+			hints = fmt.Sprintf(" %s navigate  %s select  %s comment  %s comments  %s preview  %s quit",
+				statusKeyStyle.Render("↑↓"),
+				statusKeyStyle.Render("Shift+↑↓"),
+				statusKeyStyle.Render("C"),
+				statusKeyStyle.Render("Tab"),
+				statusKeyStyle.Render("Enter"),
+				statusKeyStyle.Render("q"))
+		} else {
+			hints = fmt.Sprintf(" %s navigate  %s select  %s comment  %s comments  %s quit",
+				statusKeyStyle.Render("↑↓"),
+				statusKeyStyle.Render("Shift+↑↓"),
+				statusKeyStyle.Render("C"),
+				statusKeyStyle.Render("Tab"),
+				statusKeyStyle.Render("q"))
+		}
 	}
 
 	return statusBarStyle.Width(width).Render(hints)

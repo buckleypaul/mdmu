@@ -27,7 +27,14 @@ func (m Model) handleCommentInput(msg tea.Msg) (Model, tea.Cmd) {
 			m.mode = modeNormal
 			return m, nil
 
-		case "ctrl+s":
+		case "alt+enter":
+			// Insert a newline into the textarea
+			enterMsg := tea.KeyMsg{Type: tea.KeyEnter}
+			var cmd tea.Cmd
+			m.textarea, cmd = m.textarea.Update(enterMsg)
+			return m, cmd
+
+		case "enter":
 			// Save the comment
 			comment := m.textarea.Value()
 			if comment == "" {
@@ -52,14 +59,6 @@ func (m Model) handleCommentInput(msg tea.Msg) (Model, tea.Cmd) {
 			}
 
 			m.commentFile.Comments = append(m.commentFile.Comments, c)
-
-			// Update file hash and save to disk
-			if hash, err := store.ComputeFileHash(m.commentFile.File); err == nil {
-				m.commentFile.FileHash = hash
-			}
-			if err := store.Save(m.commentFile); err != nil {
-				m.statusMessage = "Error saving: " + err.Error()
-			}
 
 			m.mode = modeNormal
 			m.selectionStart = -1

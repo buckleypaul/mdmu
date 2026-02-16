@@ -2,7 +2,6 @@ package output
 
 import (
 	"fmt"
-	"path/filepath"
 	"sort"
 	"strings"
 
@@ -10,7 +9,7 @@ import (
 )
 
 // Format renders comments as structured markdown for LLM consumption.
-func Format(cf *store.CommentFile, source []byte) string {
+func Format(cf *store.CommentFile, source []byte, filename string) string {
 	if len(cf.Comments) == 0 {
 		return ""
 	}
@@ -25,7 +24,6 @@ func Format(cf *store.CommentFile, source []byte) string {
 	})
 
 	var sb strings.Builder
-	filename := filepath.Base(cf.File)
 	sb.WriteString(fmt.Sprintf("Please address my comments on %s:\n\n", filename))
 	sb.WriteString(fmt.Sprintf("## Comments on %s\n\n", filename))
 
