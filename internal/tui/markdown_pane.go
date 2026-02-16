@@ -1,6 +1,10 @@
 package tui
 
-import "strings"
+import (
+	"strings"
+
+	"github.com/paulbuckley/mdmu/internal/markdown"
+)
 
 func (m Model) renderMarkdownPane() string {
 	width := m.leftWidth()
@@ -17,7 +21,7 @@ func (m Model) renderMarkdownPane() string {
 		line := m.doc.Lines[i]
 
 		// Pad or truncate to width
-		visibleWidth := visibleLen(line)
+		visibleWidth := markdown.VisibleLen(line)
 		padding := width - 2 - visibleWidth // -2 for border padding
 		if padding < 0 {
 			padding = 0
@@ -79,22 +83,3 @@ func (m Model) selectionRange() (int, int) {
 	return start, end
 }
 
-// visibleLen returns visible length excluding ANSI escape sequences.
-func visibleLen(s string) int {
-	length := 0
-	inEscape := false
-	for _, r := range s {
-		if inEscape {
-			if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') {
-				inEscape = false
-			}
-			continue
-		}
-		if r == '\033' {
-			inEscape = true
-			continue
-		}
-		length++
-	}
-	return length
-}

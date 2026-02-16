@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/mattn/go-runewidth"
 	"github.com/paulbuckley/mdmu/internal/store"
 )
 
@@ -38,8 +39,8 @@ func (m Model) renderCommentsPane() string {
 		if maxTextWidth < 10 {
 			maxTextWidth = 10
 		}
-		if len(text) > maxTextWidth {
-			text = text[:maxTextWidth-3] + "..."
+		if runewidth.StringWidth(text) > maxTextWidth {
+			text = runewidth.Truncate(text, maxTextWidth, "...")
 		}
 
 		commentLine := header + " " + commentTextStyle.Render(text)

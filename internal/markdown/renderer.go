@@ -3,8 +3,10 @@ package markdown
 import (
 	"bytes"
 	"fmt"
+	"sort"
 	"strings"
 
+	"github.com/mattn/go-runewidth"
 	"github.com/yuin/goldmark/ast"
 	east "github.com/yuin/goldmark/extension/ast"
 )
@@ -28,19 +30,29 @@ const (
 )
 
 type ansiRenderer struct {
-	source   []byte
-	width    int
-	lines    []string
-	mappings []LineMapping
+	source      []byte
+	width       int
+	lines       []string
+	mappings    []LineMapping
+	lineOffsets []int // byte offsets where each source line starts
 
 	// State for inline rendering
 	inlineStyles []string
 }
 
 func newANSIRenderer(source []byte, width int) *ansiRenderer {
+	// Precompute line offset table for O(log n) byte-to-line lookups
+	offsets := []int{0}
+	for i, b := range source {
+		if b == '\n' {
+			offsets = append(offsets, i+1)
+		}
+	}
+
 	return &ansiRenderer{
-		source: source,
-		width:  width,
+		source:      source,
+		width:       width,
+		lineOffsets: offsets,
 	}
 }
 
@@ -104,13 +116,10 @@ func (r *ansiRenderer) sourceLineRangeFromChildren(node ast.Node) (int, int) {
 
 // byteOffsetToLine converts a byte offset to a 1-indexed source line number.
 func (r *ansiRenderer) byteOffsetToLine(offset int) int {
-	line := 1
-	for i := 0; i < offset && i < len(r.source); i++ {
-		if r.source[i] == '\n' {
-			line++
-		}
-	}
-	return line
+	// Binary search: find the number of line starts at or before offset
+	return sort.Search(len(r.lineOffsets), func(i int) bool {
+		return r.lineOffsets[i] > offset
+	})
 }
 
 func (r *ansiRenderer) render(node ast.Node) {
@@ -440,7 +449,7 @@ func wrapLine(s string, width int) []string {
 	currentWidth := 0
 
 	for _, word := range words {
-		wordWidth := visibleLen(word)
+		wordWidth := VisibleLen(word)
 
 		if currentWidth == 0 {
 			currentLine = word
@@ -462,9 +471,10 @@ func wrapLine(s string, width int) []string {
 	return lines
 }
 
-// visibleLen returns the visible length of a string, ignoring ANSI escape sequences.
-func visibleLen(s string) int {
-	length := 0
+// VisibleLen returns the visible width of a string, ignoring ANSI escape sequences
+// and accounting for wide characters (CJK, emoji).
+func VisibleLen(s string) int {
+	width := 0
 	inEscape := false
 	for _, r := range s {
 		if inEscape {
@@ -477,7 +487,7 @@ func visibleLen(s string) int {
 			inEscape = true
 			continue
 		}
-		length++
+		width += runewidth.RuneWidth(r)
 	}
-	return length
+	return width
 }

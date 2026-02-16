@@ -123,9 +123,9 @@ func TestVisibleLen(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		got := visibleLen(tt.input)
+		got := VisibleLen(tt.input)
 		if got != tt.want {
-			t.Errorf("visibleLen(%q) = %d, want %d", tt.input, got, tt.want)
+			t.Errorf("VisibleLen(%q) = %d, want %d", tt.input, got, tt.want)
 		}
 	}
 }

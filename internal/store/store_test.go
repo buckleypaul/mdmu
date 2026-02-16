@@ -7,13 +7,22 @@ import (
 )
 
 func TestStorePathDeterministic(t *testing.T) {
-	p1 := StorePath("/tmp/test/file.md")
-	p2 := StorePath("/tmp/test/file.md")
+	p1, err := StorePath("/tmp/test/file.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	p2, err := StorePath("/tmp/test/file.md")
+	if err != nil {
+		t.Fatal(err)
+	}
 	if p1 != p2 {
 		t.Errorf("StorePath not deterministic: %q != %q", p1, p2)
 	}
 
-	p3 := StorePath("/tmp/test/other.md")
+	p3, err := StorePath("/tmp/test/other.md")
+	if err != nil {
+		t.Fatal(err)
+	}
 	if p1 == p3 {
 		t.Error("different files should have different store paths")
 	}
@@ -60,7 +69,8 @@ func TestLoadSaveRoundTrip(t *testing.T) {
 	}
 
 	// Cleanup
-	os.Remove(StorePath(testFile))
+	sp, _ := StorePath(testFile)
+	os.Remove(sp)
 }
 
 func TestComputeFileHash(t *testing.T) {

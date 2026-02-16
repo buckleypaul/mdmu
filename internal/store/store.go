@@ -11,10 +11,13 @@ import (
 const storeDir = "/tmp/mdmu"
 
 // StorePath returns the deterministic JSON file path for a given source file.
-func StorePath(filePath string) string {
-	abs, _ := filepath.Abs(filePath)
+func StorePath(filePath string) (string, error) {
+	abs, err := filepath.Abs(filePath)
+	if err != nil {
+		return "", fmt.Errorf("resolving path: %w", err)
+	}
 	hash := sha256.Sum256([]byte(abs))
-	return filepath.Join(storeDir, fmt.Sprintf("%x.json", hash))
+	return filepath.Join(storeDir, fmt.Sprintf("%x.json", hash)), nil
 }
 
 // Load reads the comment file for the given source file path.
@@ -25,7 +28,10 @@ func Load(filePath string) (*CommentFile, error) {
 		return nil, fmt.Errorf("resolving path: %w", err)
 	}
 
-	sp := StorePath(abs)
+	sp, err := StorePath(abs)
+	if err != nil {
+		return nil, err
+	}
 	data, err := os.ReadFile(sp)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -51,6 +57,7 @@ func Load(filePath string) (*CommentFile, error) {
 }
 
 // Save writes the CommentFile to its deterministic store path.
+// Uses atomic write (temp file + rename) to prevent data loss on interruption.
 func Save(cf *CommentFile) error {
 	if err := os.MkdirAll(storeDir, 0o755); err != nil {
 		return fmt.Errorf("creating store dir: %w", err)
@@ -61,9 +68,31 @@ func Save(cf *CommentFile) error {
 		return fmt.Errorf("marshaling comments: %w", err)
 	}
 
-	sp := StorePath(cf.File)
-	if err := os.WriteFile(sp, data, 0o644); err != nil {
-		return fmt.Errorf("writing store file: %w", err)
+	sp, err := StorePath(cf.File)
+	if err != nil {
+		return err
+	}
+
+	// Write to temp file then rename for atomic operation
+	tmp, err := os.CreateTemp(storeDir, "*.tmp")
+	if err != nil {
+		return fmt.Errorf("creating temp file: %w", err)
+	}
+	tmpPath := tmp.Name()
+
+	if _, err := tmp.Write(data); err != nil {
+		tmp.Close()
+		os.Remove(tmpPath)
+		return fmt.Errorf("writing temp file: %w", err)
+	}
+	if err := tmp.Close(); err != nil {
+		os.Remove(tmpPath)
+		return fmt.Errorf("closing temp file: %w", err)
+	}
+
+	if err := os.Rename(tmpPath, sp); err != nil {
+		os.Remove(tmpPath)
+		return fmt.Errorf("renaming store file: %w", err)
 	}
 
 	return nil

@@ -16,6 +16,7 @@ func (m *Model) reRender() {
 	}
 	doc, err := markdown.ParseAndRender(m.source, renderWidth)
 	if err != nil {
+		m.statusMessage = "Render error: " + err.Error()
 		return
 	}
 	m.doc = doc
