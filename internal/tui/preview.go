@@ -24,14 +24,17 @@ func (m Model) handlePreviewKeys(msg tea.KeyMsg) (Model, tea.Cmd) {
 	case "esc":
 		m.mode = modeNormal
 		m.copiedMessage = false
+		m.statusMessage = ""
 		return m, nil
 
-	case "y":
+	case "c", "C":
 		if err := clipboard.Copy(m.previewContent); err != nil {
-			m.statusMessage = "Clipboard error: " + err.Error()
+			m.statusMessage = "✗ Failed to copy: " + err.Error()
 		} else {
-			m.copiedMessage = true
+			m.statusMessage = "✓ Copied to clipboard"
 		}
+		m.mode = modeNormal
+		m.copiedMessage = false
 		return m, nil
 
 	case "up":
@@ -122,18 +125,11 @@ func (m Model) renderPreviewStatusBar() string {
 		width = 80
 	}
 
-	var hints string
-	if m.copiedMessage {
-		hints = " Copied to clipboard!  " +
-			statusKeyStyle.Render("Esc") + " back  " +
-			statusKeyStyle.Render("q") + " quit"
-	} else {
-		hints = " " +
-			statusKeyStyle.Render("y") + " copy  " +
-			statusKeyStyle.Render("↑↓") + " scroll  " +
-			statusKeyStyle.Render("Esc") + " back  " +
-			statusKeyStyle.Render("q") + " quit"
-	}
+	hints := " " +
+		statusKeyStyle.Render("C") + " copy  " +
+		statusKeyStyle.Render("↑↓") + " or " + statusKeyStyle.Render("PgUp/PgDn") + " scroll  " +
+		statusKeyStyle.Render("Esc") + " return  " +
+		statusKeyStyle.Render("q") + " quit"
 
 	return statusBarStyle.Width(width).Render(hints)
 }

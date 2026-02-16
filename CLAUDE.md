@@ -41,7 +41,7 @@ go vet ./...                # Lint
 - **Line Mapping**: Renderer tracks which rendered lines correspond to which source lines (critical because word-wrapping changes line counts).
 - **Selection Model**: Line-level selection (not character-level).
 - **Ephemeral Comments**: Comments exist only in memory during a session. No disk persistence.
-- **Preview & Copy**: Press `Enter` to preview formatted output, `y` to copy to clipboard.
+- **Preview & Copy**: Press `P` to preview formatted output, `C` to copy to clipboard (works in both normal and preview mode).
 - **Re-rendering**: On terminal resize, markdown is re-parsed at new width.
 
 ## Code Style

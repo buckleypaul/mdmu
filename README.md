@@ -47,9 +47,10 @@ mdmu <file.md>
 - `PgUp/PgDn` - Jump by page
 - `Home/End` - Jump to start/end of document
 - `Shift+↑↓` - Select line ranges
-- `C` - Add comment to current line or selection
+- `Enter` - Add comment to current line or selection
 - `Tab` - Switch between markdown and comments pane
-- `Enter` - Preview formatted output (when comments exist)
+- `P` - Preview formatted output (when comments exist)
+- `C` - Copy comments to clipboard and show success message
 - `Esc` - Clear selection
 - `q` - Quit
 
@@ -64,9 +65,9 @@ mdmu <file.md>
 - `Tab` - Switch back to markdown pane
 
 **Preview mode:**
-- `y` - Copy formatted output to clipboard
+- `C` - Copy formatted output to clipboard and return to normal mode
 - `↑↓` or `PgUp/PgDn` - Scroll preview
-- `Esc` - Return to normal mode
+- `Esc` - Return to normal mode without copying
 - `q` - Quit
 
 ## Claude Code Integration
@@ -83,12 +84,10 @@ mdmu <file.md>
 3. **Add your comments** interactively using the TUI
    - Navigate with `↑↓`
    - Select ranges with `Shift+↑↓`
-   - Press `C` to add comments
-4. **Preview your comments:**
-   - Press `Enter` to view formatted output
-   - Review the structured markdown
-5. **Copy to clipboard:**
-   - Press `y` in preview mode
+   - Press `Enter` to add comments
+4. **Copy to clipboard:**
+   - **Fast path:** Press `C` to copy directly (shows "✓ Copied to clipboard")
+   - **Review path:** Press `P` to preview, then `C` to copy and exit
    - Paste directly into your Claude Code session
 
 The formatted output includes a ready-to-use prompt:

@@ -61,6 +61,7 @@ func (m Model) handleCommentInput(msg tea.Msg) (Model, tea.Cmd) {
 
 			m.mode = modeNormal
 			m.selectionStart = -1
+			m.statusMessage = "" // Clear status message when adding comment
 			return m, nil
 		}
 	}

@@ -19,7 +19,7 @@ func (m Model) renderStatusBar() string {
 	case m.mode == modeSelecting:
 		hints = fmt.Sprintf(" %s extend  %s comment  %s cancel",
 			statusKeyStyle.Render("Shift+↑↓"),
-			statusKeyStyle.Render("C"),
+			statusKeyStyle.Render("Enter"),
 			statusKeyStyle.Render("Esc"))
 
 	case m.focusPane == paneComments:
@@ -30,22 +30,19 @@ func (m Model) renderStatusBar() string {
 			statusKeyStyle.Render("q"))
 
 	default:
-		if len(m.commentFile.Comments) > 0 {
-			hints = fmt.Sprintf(" %s navigate  %s select  %s comment  %s comments  %s preview  %s quit",
-				statusKeyStyle.Render("↑↓"),
-				statusKeyStyle.Render("Shift+↑↓"),
-				statusKeyStyle.Render("C"),
-				statusKeyStyle.Render("Tab"),
-				statusKeyStyle.Render("Enter"),
-				statusKeyStyle.Render("q"))
-		} else {
-			hints = fmt.Sprintf(" %s navigate  %s select  %s comment  %s comments  %s quit",
-				statusKeyStyle.Render("↑↓"),
-				statusKeyStyle.Render("Shift+↑↓"),
-				statusKeyStyle.Render("C"),
-				statusKeyStyle.Render("Tab"),
-				statusKeyStyle.Render("q"))
-		}
+		hints = fmt.Sprintf(" %s navigate  %s select  %s comment  %s comments  %s preview  %s copy  %s quit",
+			statusKeyStyle.Render("↑↓"),
+			statusKeyStyle.Render("Shift+↑↓"),
+			statusKeyStyle.Render("Enter"),
+			statusKeyStyle.Render("Tab"),
+			statusKeyStyle.Render("P"),
+			statusKeyStyle.Render("C"),
+			statusKeyStyle.Render("q"))
+	}
+
+	// Prepend status message if present
+	if m.statusMessage != "" {
+		hints = " " + m.statusMessage + "  |" + hints
 	}
 
 	return statusBarStyle.Width(width).Render(hints)

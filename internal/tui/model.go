@@ -4,7 +4,9 @@ import (
 	"github.com/charmbracelet/bubbles/textarea"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/paulbuckley/mdmu/internal/clipboard"
 	"github.com/paulbuckley/mdmu/internal/markdown"
+	"github.com/paulbuckley/mdmu/internal/output"
 	"github.com/paulbuckley/mdmu/internal/store"
 )
 
@@ -148,8 +150,22 @@ func (m Model) handleKeypress(msg tea.KeyMsg) (Model, tea.Cmd) {
 		return m, tea.Quit
 
 	// Enter preview mode
-	case key == "enter" && len(m.commentFile.Comments) > 0:
+	case (key == "p" || key == "P") && len(m.commentFile.Comments) > 0:
 		return m.enterPreviewMode(), nil
+
+	// Copy to clipboard
+	case key == "c" || key == "C":
+		if len(m.commentFile.Comments) == 0 {
+			m.statusMessage = "No comments to copy"
+			return m, nil
+		}
+		content := output.Format(m.commentFile, m.source, m.filename)
+		if err := clipboard.Copy(content); err != nil {
+			m.statusMessage = "✗ Failed to copy: " + err.Error()
+		} else {
+			m.statusMessage = "✓ Copied to clipboard"
+		}
+		return m, nil
 
 	// Tab: switch focus
 	case key == "tab":
@@ -252,7 +268,7 @@ func (m Model) handleMarkdownKeys(key string) (Model, tea.Cmd) {
 		m.selectionStart = -1
 		m.mode = modeNormal
 
-	case "c", "C":
+	case "enter":
 		// Enter comment mode
 		m.mode = modeCommenting
 		m.textarea = newCommentTextarea()
@@ -300,6 +316,7 @@ func (m Model) handleCommentKeys(key string) (Model, tea.Cmd) {
 			if m.commentCursor >= len(m.commentFile.Comments) && m.commentCursor > 0 {
 				m.commentCursor--
 			}
+			m.statusMessage = "" // Clear status message when deleting comment
 		}
 	}
 
