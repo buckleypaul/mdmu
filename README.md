@@ -9,7 +9,8 @@ When working with AI-generated markdown files (like plan files from Claude Code)
 - Navigate rendered markdown with syntax highlighting
 - Select line ranges and add comments
 - View all comments in a sidebar
-- Export comments as structured markdown for LLM consumption
+- Preview formatted output in full-screen mode
+- Copy comments as structured markdown to clipboard for LLM consumption
 
 ## Installation
 
@@ -35,43 +36,38 @@ go build -o mdmu .
 
 ## Usage
 
-### Interactive TUI
-
 ```bash
 mdmu <file.md>
 ```
 
 **Keybindings:**
+
+**Normal mode:**
 - `↑↓` - Navigate lines
+- `PgUp/PgDn` - Jump by page
+- `Home/End` - Jump to start/end of document
 - `Shift+↑↓` - Select line ranges
 - `C` - Add comment to current line or selection
-- `Ctrl+S` - Save comment (when in comment input mode)
-- `Esc` - Cancel comment input or clear selection
 - `Tab` - Switch between markdown and comments pane
-- `d` - Delete focused comment (when in comments pane)
+- `Enter` - Preview formatted output (when comments exist)
+- `Esc` - Clear selection
 - `q` - Quit
 
-### Export Comments
+**Comment input mode:**
+- `Enter` - Save comment
+- `Alt+Enter` - Insert newline in comment
+- `Esc` - Cancel comment input
 
-```bash
-mdmu comments <file.md>
-```
+**Comments pane:**
+- `↑↓` - Navigate comments
+- `d` - Delete focused comment
+- `Tab` - Switch back to markdown pane
 
-Prints all comments in a structured markdown format suitable for copying to Claude Code:
-
-```markdown
-Please address my comments on plan.md:
-
-## Comments on plan.md
-
-### Lines 5-12:
-> This section covers the main
-> components of the system...
-
-**Comment:** Need more detail on the auth flow here
-
----
-```
+**Preview mode:**
+- `y` - Copy formatted output to clipboard
+- `↑↓` or `PgUp/PgDn` - Scroll preview
+- `Esc` - Return to normal mode
+- `q` - Quit
 
 ## Claude Code Integration
 
@@ -85,14 +81,17 @@ Please address my comments on plan.md:
    mdmu plan.md
    ```
 3. **Add your comments** interactively using the TUI
-4. **Quit mdmu** (press `q`) - comments are auto-saved
-5. **Export comments for Claude Code:**
-   ```bash
-   mdmu comments plan.md
-   ```
-6. **Copy the entire output and paste into your Claude Code session**
+   - Navigate with `↑↓`
+   - Select ranges with `Shift+↑↓`
+   - Press `C` to add comments
+4. **Preview your comments:**
+   - Press `Enter` to view formatted output
+   - Review the structured markdown
+5. **Copy to clipboard:**
+   - Press `y` in preview mode
+   - Paste directly into your Claude Code session
 
-The output is formatted with a ready-to-use prompt that tells Claude Code to address your comments:
+The formatted output includes a ready-to-use prompt:
 
 ```markdown
 Please address my comments on plan.md:
@@ -108,14 +107,15 @@ Please address my comments on plan.md:
 ---
 ```
 
-**Alternative:** You can also run `mdmu comments <file>` directly from within Claude Code using bash commands, and Claude will automatically read and process the comments.
+**Note:** Comments are ephemeral and exist only during your mdmu session. This encourages a focused review workflow without persistent file clutter.
 
 ## Features
 
 - **Rich markdown rendering** - Headings, code blocks, lists, blockquotes, emphasis, links
-- **Source line mapping** - Accurate tracking from rendered output to source lines
-- **Persistent storage** - Comments stored as JSON in `/tmp/mdmu/`
-- **File change detection** - Warns when file has been modified since comments were added
+- **Source line mapping** - Accurate tracking from rendered output to source lines (handles word-wrapping)
+- **Preview mode** - Full-screen formatted output view before copying
+- **Clipboard integration** - Cross-platform clipboard copy (macOS, Linux, Windows)
+- **Ephemeral comments** - Session-only storage encourages focused review workflow
 - **Responsive resize** - Automatically re-renders markdown when terminal is resized
 
 ## Architecture
@@ -125,7 +125,7 @@ Please address my comments on plan.md:
 - **Markdown Parser**: [goldmark](https://github.com/yuin/goldmark)
 - **CLI Framework**: [Cobra](https://github.com/spf13/cobra)
 
-See the [implementation plan](plan.md) for detailed architecture decisions.
+See `CLAUDE.md` for detailed architecture decisions and development guidelines.
 
 ## License
 
